@@ -3,6 +3,8 @@ library(shiny)
 library(shinyjs)  # For client-side interactivity
 library(data.table)  # For handling data.table
 
+# Global shared data stored in a reactiveValues object
+shared_data <- reactiveValues(data = data.table(Name = character(0), Number = numeric(0)))
 
 shinyServer(function(input, output, session) {
   
@@ -61,15 +63,6 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # Conditionally display the results table
-  output$data_table <- renderTable({
-    if (table_visibility()) {
-      shared_data$data
-    } else {
-      NULL
-    }
-  })
-  
   # Calculate average of all inputs
   average_input <- reactive({
     data <- shared_data$data
@@ -80,13 +73,24 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # Conditionally display the results table
+  output$data_table <- renderTable({
+    if (table_visibility()) {
+      shared_data$data
+    } else {
+      NULL
+    }
+  })
+  
   # Conditionally display the closest user's information
   output$closest_user <- renderText({
     if (closest_user_visibility()) {
       user <- closest_user()
+      avg <- average_input()
       paste0(
         "Closest to 2/3 of the average: Name = ", user$Name, 
-        ", Number = ", user$Number
+        ", Number = ", user$Number, "\n",
+        "Average of inputs: ", round(avg  * 2 / 3, 2)
       )
     } else {
       NULL
