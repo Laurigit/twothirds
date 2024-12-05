@@ -1,12 +1,15 @@
 # server.R
 library(shiny)
 library(shinyjs)  # For client-side interactivity
+library(data.table)  # For handling data.table
+
 
 shinyServer(function(input, output, session) {
   
   # Admin control: reactive values for visibility of table and closest user text
   table_visibility <- reactiveVal(FALSE)  # Start with the table hidden
   closest_user_visibility <- reactiveVal(FALSE)  # Start with the closest user text hidden
+  reset_visibility <- reactiveVal(FALSE)  # Start with the reset button hidden
   
   # Reactive value to check if the user is an admin
   is_admin <- reactive({
@@ -17,32 +20,25 @@ shinyServer(function(input, output, session) {
   # Initialize shinyjs
   useShinyjs()
   
-  # Observe the toggle table button (only available for admin)
-  observeEvent(input$toggle_table, {
-    if (is_admin()) {
-      # Toggle visibility
-      table_visibility(!table_visibility())
-      closest_user_visibility(!closest_user_visibility())
-    }
-  })
-  
   # Observe the submit button
   observeEvent(input$submit, {
     # Validate input
     req(input$name)
     req(input$number)
     
-    # Append new data to the shared reactiveValues object
+    # Append new data to the shared reactiveValues object (global data)
     isolate({
       new_entry <- data.table(
         Name = input$name,
         Number = as.integer(input$number)
       )
+      
+      # Append the new entry to shared data
       shared_data$data <- rbind(shared_data$data, new_entry)
     })
     
     # Disable the submit button using shinyjs
-    shinyjs::disable("submit")  # Disable the button using shinyjs
+    shinyjs::disable("submit")  # Disable the submit button after submission
     
     # Display user info
     output$user_info <- renderText({
@@ -74,6 +70,16 @@ shinyServer(function(input, output, session) {
     }
   })
   
+  # Calculate average of all inputs
+  average_input <- reactive({
+    data <- shared_data$data
+    if (nrow(data) > 0) {
+      mean(data$Number)
+    } else {
+      0  # Default value if no data
+    }
+  })
+  
   # Conditionally display the closest user's information
   output$closest_user <- renderText({
     if (closest_user_visibility()) {
@@ -93,4 +99,35 @@ shinyServer(function(input, output, session) {
       actionButton("toggle_table", "Hide/Show Results Table")
     }
   })
+  
+  # Observe the "Start Over" button (reset the data)
+  observeEvent(input$reset, {
+    # Only allow reset if the user is an admin
+    if (is_admin()) {
+      # Reset the data to empty data.table
+      shared_data$data <- data.table(Name = character(0), Number = numeric(0))
+      
+      # Optionally re-enable the submit button if needed
+      shinyjs::enable("submit")
+      
+      # Reset the visibility states as well if desired
+      table_visibility(FALSE)
+      closest_user_visibility(FALSE)
+    }
+  })
+  
+  # Disable the "Start Over" button if the user is not an admin
+  observe({
+    if (!is_admin()) {
+      shinyjs::disable("reset")  # Disable button for non-admins
+    }
+  })
+  
+  # Observe the toggle_table button to show/hide the results table
+  observeEvent(input$toggle_table, {
+    # Toggle visibility of the table and the closest user text
+    table_visibility(!table_visibility())
+    closest_user_visibility(!closest_user_visibility())
+  })
+  
 })

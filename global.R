@@ -3,8 +3,6 @@ library(shiny)
 library(data.table)
 library(shinyjs)
 
-# Shared reactiveValues object for data across sessions
-shared_data <- reactiveValues(data = data.table(
-  Name = character(),
-  Number = integer()
-))
+
+# Global shared data stored in a reactiveValues object
+shared_data <- reactiveValues(data = data.table(Name = character(0), Number = numeric(0)))
