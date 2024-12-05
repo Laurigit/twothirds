@@ -1,7 +1,10 @@
 # ui.R
 library(shiny)
+library(shinyjs)  # For client-side interactivity
 
 shinyUI(fluidPage(
+  useShinyjs(),  # Initialize shinyjs
+  
   titlePanel("User Input App"),
   
   sidebarLayout(
@@ -10,7 +13,7 @@ shinyUI(fluidPage(
       numericInput(
         "number", 
         "Enter a whole number (0-100):", 
-        value = 0, 
+        value = 50, 
         min = 0, 
         max = 100
       ),

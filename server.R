@@ -1,5 +1,6 @@
 # server.R
 library(shiny)
+library(shinyjs)  # For client-side interactivity
 
 shinyServer(function(input, output, session) {
   
@@ -13,9 +14,13 @@ shinyServer(function(input, output, session) {
     !is.null(query$u) && query$u == "samuela"
   })
   
+  # Initialize shinyjs
+  useShinyjs()
+  
   # Observe the toggle table button (only available for admin)
   observeEvent(input$toggle_table, {
     if (is_admin()) {
+      # Toggle visibility
       table_visibility(!table_visibility())
       closest_user_visibility(!closest_user_visibility())
     }
@@ -36,8 +41,10 @@ shinyServer(function(input, output, session) {
       shared_data$data <- rbind(shared_data$data, new_entry)
     })
     
-    # Disable the submit button and display user info
-    updateActionButton(session, "submit", label = "Submitted", disabled = TRUE)
+    # Disable the submit button using shinyjs
+    shinyjs::disable("submit")  # Disable the button using shinyjs
+    
+    # Display user info
     output$user_info <- renderText({
       paste0("Thank you, ", input$name, "! You entered: ", input$number)
     })
