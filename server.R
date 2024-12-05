@@ -5,13 +5,15 @@ library(data.table)  # For handling data.table
 
 # Global shared data stored in a reactiveValues object
 shared_data <- reactiveValues(data = data.table(Name = character(0), Number = numeric(0)))
-
+# Reactive value to track if new inputs should be accepted
+inputs_disabled <- reactiveVal(FALSE)
 shinyServer(function(input, output, session) {
+  
+
   
   # Admin control: reactive values for visibility of table and closest user text
   table_visibility <- reactiveVal(FALSE)  # Start with the table hidden
   closest_user_visibility <- reactiveVal(FALSE)  # Start with the closest user text hidden
-  reset_visibility <- reactiveVal(FALSE)  # Start with the reset button hidden
   
   # Reactive value to check if the user is an admin
   is_admin <- reactive({
@@ -28,19 +30,24 @@ shinyServer(function(input, output, session) {
     req(input$name)
     req(input$number)
     
-    # Append new data to the shared reactiveValues object (global data)
-    isolate({
-      new_entry <- data.table(
-        Name = input$name,
-        Number = as.integer(input$number)
-      )
-      
-      # Append the new entry to shared data
-      shared_data$data <- rbind(shared_data$data, new_entry)
-    })
+    # Only add new entry if inputs are not disabled
+    if (!inputs_disabled()) {
+      # Append new data to the shared reactiveValues object (global data)
+      isolate({
+        new_entry <- data.table(
+          Name = input$name,
+          Number = as.integer(input$number)
+        )
+        
+        # Append the new entry to shared data
+        shared_data$data <- rbind(shared_data$data, new_entry)
+      })
+    }
     
-    # Disable the submit button using shinyjs
+    # Disable the submit button and input fields after submission (no longer necessary but kept for reference)
     shinyjs::disable("submit")  # Disable the submit button after submission
+    shinyjs::disable("name")    # Disable the name input field
+    shinyjs::disable("number")  # Disable the number input field
     
     # Display user info
     output$user_info <- renderText({
@@ -90,7 +97,7 @@ shinyServer(function(input, output, session) {
       paste0(
         "Closest to 2/3 of the average: Name = ", user$Name, 
         ", Number = ", user$Number, "\n",
-        "Average of inputs: ", round(avg  * 2 / 3, 2)
+        "Average of inputs: ", round(avg, 2)
       )
     } else {
       NULL
@@ -100,7 +107,10 @@ shinyServer(function(input, output, session) {
   # Conditionally render the admin button
   output$admin_controls <- renderUI({
     if (is_admin()) {
-      actionButton("toggle_table", "Hide/Show Results Table")
+      tagList(
+        actionButton("toggle_table", "Hide/Show Results Table"),
+        actionButton("disable_inputs", "Disable New Inputs")  # Admin button to disable inputs
+      )
     }
   })
   
@@ -111,12 +121,17 @@ shinyServer(function(input, output, session) {
       # Reset the data to empty data.table
       shared_data$data <- data.table(Name = character(0), Number = numeric(0))
       
-      # Optionally re-enable the submit button if needed
-      shinyjs::enable("submit")
-      
       # Reset the visibility states as well if desired
       table_visibility(FALSE)
       closest_user_visibility(FALSE)
+      
+      # Allow inputs again (reset the reactive value)
+      inputs_disabled(FALSE)
+      
+      # Optionally re-enable the submit button and input fields after reset
+      shinyjs::enable("submit")
+      shinyjs::enable("name")
+      shinyjs::enable("number")
     }
   })
   
@@ -132,6 +147,17 @@ shinyServer(function(input, output, session) {
     # Toggle visibility of the table and the closest user text
     table_visibility(!table_visibility())
     closest_user_visibility(!closest_user_visibility())
+  })
+  
+  # Disable the inputs if the admin clicks "Disable New Inputs"
+  observeEvent(input$disable_inputs, {
+    # Set reactive value to disable new inputs (but don't disable buttons)
+    inputs_disabled(TRUE)
+    
+    # Optionally, show a message or something indicating inputs are disabled
+    output$user_info <- renderText({
+      "New inputs have been disabled by the admin."
+    })
   })
   
 })
