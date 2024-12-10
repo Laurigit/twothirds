@@ -97,8 +97,9 @@ shinyServer(function(input, output, session) {
       avg <- average_input()
       paste0(
         "Closest to 2/3 of the average: Name = ", user$Name, 
-        ", Number = ", user$Number, "\n",
-        "Average of inputs: ", round(avg, 2)
+        ", Number = ", user$Number, "\n\r",
+       # "Average of inputs: ", round(avg, 2),  "\n\r",
+        "average*2/3: ", round(avg * 2 / 3, 2) 
       )
     } else {
       NULL

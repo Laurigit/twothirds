@@ -5,12 +5,12 @@ library(shinyjs)
 shinyUI(fluidPage(
   useShinyjs(),
   
-  titlePanel("Shiny App with Shared Data"),
+  titlePanel("Shiny App for 2/3 game"),
   
   sidebarLayout(
     sidebarPanel(
       textInput("name", "Enter your name:"),
-      numericInput("number", "Enter a number (0-100):", 50, min = 0, max = 100, step = 1),
+      numericInput("number", "Enter a number (0-100):", 100, min = 0, max = 100, step = 1),
       actionButton("submit", "Submit"),
       actionButton("reset", "Start Over"),
       
