@@ -72,9 +72,10 @@ shinyServer(function(input, output, session) {
   
   # Calculate average of all inputs
   average_input <- reactive({
-    data <- shared_data$data
+    data <- data.table(shared_data$data)
     if (nrow(data) > 0) {
-      mean(data$Number)
+      data[Number >= 0 & Number <= 100, mean(Number)]
+    
     } else {
       0  # Default value if no data
     }
